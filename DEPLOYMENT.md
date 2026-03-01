@@ -22,7 +22,11 @@ I have hardcoded the credentials into the system CORE for you. You now only need
     > **Do NOT select the `backend` folder** as the Root Directory. If you do, you will only see the API message and not the dashboard.
 4.  **Framework Preset**: Select **`Vite`**.
 5.  **Environment Variables**: **SKIP THIS SECTION**. (Leave it empty).
-6.  **Deploy**: Vercel will automatically build the frontend and serve the API.
+6.  **Build Settings**:
+    > [!IMPORTANT]
+    > **RESET ALL SETTINGS**: In your Vercel project, go to **Settings > General** and ensure "Build Command", "Output Directory", and **"Install Command"** are all set to **"OFF"** (or "Default"). 
+    > If you see `npm install --prefix=..` in the "Install Command", **DELETE IT**. It must be empty/default.
+7.  **Deploy**: Vercel will now correctly build the frontend and serve the API.
 
 ### 2.1. Email Support (Optional)
 If you want the "Access Granted" emails to be sent live from your Vercel deployment, add these variables in **Project Settings > Environment Variables**:
