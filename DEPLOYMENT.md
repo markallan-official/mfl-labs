@@ -27,10 +27,5 @@ I have hardcoded the credentials into the system CORE for you. You now only need
 1.  **Initial Admin Setup**: Manually set your status to `admin` in the Supabase `users` table for your email `markmallan01@gmail.com`.
 2.  **Access Approvals**: Use the **Admin Control Panel** to approve new requests.
 
-## 4. Scaling Considerations
-
-*   **Database Scaling**: Monitor Supabase usage and upgrade plans if your user base grows significantly.
-*   **API Performance**: Vercel Serverless Functions have a 10s execution limit on Hobby plans. For heavy backend tasks, consider Supabase Edge Functions.
-
 ---
 *Created by Antigravity for MFL LABS*

@@ -134,6 +134,7 @@ app.get('/health', (req: Request, res: Response) => {
 
 // Mount all route modules
 app.use('/api/v1/auth', authRoutes);
+app.get('/', (req, res) => res.status(200).send('MFL LABS // API_ACTIVE'));
 app.use('/api/v1/admin/approvals', adminApprovalsRoutes);
 app.use('/api/v1/workspaces/designer', designerRoutes);
 app.use('/api/v1/workspaces/analyst', analystRoutes);
