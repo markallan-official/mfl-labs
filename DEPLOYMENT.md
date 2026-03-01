@@ -18,6 +18,8 @@ I have hardcoded the credentials into the system CORE for you. You now only need
 1.  **Import**: Select your repository `MFL-LAB` in Vercel.
 2.  **Project Name**: Use `mfl-labs`.
 3.  **Root Directory**: Keep it as the **Default (Root)**.
+    > [!IMPORTANT]
+    > **Do NOT select the `backend` folder** as the Root Directory. If you do, you will only see the API message and not the dashboard.
 4.  **Framework Preset**: Select **`Vite`**.
 5.  **Environment Variables**: **SKIP THIS SECTION**. (Leave it empty).
 6.  **Deploy**: Vercel will automatically build the frontend and serve the API.
