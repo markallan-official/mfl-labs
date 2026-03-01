@@ -34,17 +34,20 @@ const RequestAccess: React.FC = () => {
                 requested_role: requestedRole
             });
 
-            if (!response.data.success) {
-                throw new Error(response.data.error || 'Failed to request access.');
+            if (response.data.success) {
+                setSuccess(true);
+                setTimeout(() => {
+                    navigate('/pending');
+                }, 3000);
             }
-
-            setSuccess(true);
-            setTimeout(() => {
-                navigate('/pending');
-            }, 3000);
-
-        } catch (error: any) {
-            setError(error.response?.data?.error || error.message || 'Failed to request access. Check console.');
+        } catch (err: any) {
+            console.error('Signup error:', err);
+            const errorData = err.response?.data;
+            if (errorData?.error === 'DATABASE_SETUP_REQUIRED') {
+                setError('CRITICAL: Database schema is missing. The system administrator must run FINAL_DATABASE_SETUP.sql in the Supabase SQL Editor.');
+            } else {
+                setError(errorData?.error || err.message || 'Failed to submit request. Please try again.');
+            }
         } finally {
             setLoading(false);
         }

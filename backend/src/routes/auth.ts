@@ -84,54 +84,84 @@ router.post('/signup', async (req: Request, res: Response) => {
         }
 
         // Create user record
-        const { error: userError } = await supabase!
-            .from('users')
-            .insert({
-                id: authData.user.id,
-                org_id: orgId,
-                email,
-                full_name,
-                status: 'pending',
-                email_verified: false,
-                metadata: { requested_role }
-            });
-
-        if (userError) throw userError;
-
-        // Create approval request for admin
-        const { error: approvalError } = await supabase!
-            .from('approvals')
-            .insert({
-                org_id: orgId,
-                type: 'user_join',
-                status: 'pending',
-                requester_id: authData.user.id,
-                data: {
-                    user_id: authData.user.id,
+        try {
+            const { error: userError } = await supabase!
+                .from('users')
+                .insert({
+                    id: authData.user.id,
+                    org_id: orgId,
                     email,
                     full_name,
-                    requested_role,
-                    requested_at: new Date().toISOString()
+                    status: 'pending',
+                    email_verified: false,
+                    metadata: { requested_role }
+                });
+
+            if (userError) {
+                if (userError.code === '42P01') { // PostgreSQL Table Not Found
+                    throw new Error('DATABASE_SCHEMA_MISSING: The "users" table was not found. Please contact the administrator to run the setup script.');
+                }
+                throw userError;
+            }
+
+            // Create approval request for admin
+            const { error: approvalError } = await supabase!
+                .from('approvals')
+                .insert({
+                    org_id: orgId,
+                    type: 'user_join',
+                    status: 'pending',
+                    requester_id: authData.user.id,
+                    data: {
+                        user_id: authData.user.id,
+                        email,
+                        full_name,
+                        requested_role,
+                        requested_at: new Date().toISOString()
+                    }
+                });
+
+            if (approvalError) {
+                if (approvalError.code === '42P01') {
+                    throw new Error('DATABASE_SCHEMA_MISSING: The "approvals" table was not found. Please contact the administrator to run the setup script.');
+                }
+                throw approvalError;
+            }
+
+            // Send email notification to Admin (markmallan01@gmail.com)
+            try {
+                await sendAccessRequestEmail(email, full_name);
+            } catch (emailErr) {
+                console.warn('Failed to send admin notification email:', emailErr);
+            }
+
+            res.status(201).json({
+                success: true,
+                message: 'Signup request submitted. Awaiting admin approval.',
+                user: {
+                    id: authData.user.id,
+                    email: authData.user.email,
+                    full_name
                 }
             });
+        } catch (dbError: any) {
+            console.error('Database insertion error during signup:', dbError);
 
-        if (approvalError) throw approvalError;
-
-        // Send email notification to Admin (markmallan01@gmail.com)
-        await sendAccessRequestEmail(email, full_name);
-
-        res.status(201).json({
-            success: true,
-            message: 'Signup request submitted. Awaiting admin approval.',
-            user: {
-                id: authData.user.id,
-                email: authData.user.email,
-                full_name
+            // If it's a schema issue, provide a better error but don't delete the auth user
+            // (they already exist in Supabase Auth now)
+            if (dbError.message?.includes('DATABASE_SCHEMA_MISSING')) {
+                return res.status(503).json({
+                    error: 'DATABASE_SETUP_REQUIRED',
+                    message: dbError.message
+                });
             }
-        });
-    } catch (error) {
+            throw dbError;
+        }
+    } catch (error: any) {
         console.error('Signup error:', error);
-        res.status(500).json({ error: (error as Error).message });
+        res.status(error.message?.includes('DATABASE_SCHEMA_MISSING') ? 503 : 500).json({
+            error: error.message || 'Internal server error'
+        });
     }
 });
 
