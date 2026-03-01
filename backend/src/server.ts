@@ -16,12 +16,13 @@ import qaRoutes from './routes/workspaces/qa.js';
 import aiBuilderRoutes from './routes/workspaces/ai_builder.js';
 import integrationRoutes from './routes/workspaces/integration.js';
 
-// Load environment variables
+// Load environment variables (optional for zero-config)
 dotenv.config();
 
 // Initialize Express application
 const app: Express = express();
-const PORT = Number(process.env.API_PORT) || 3000;
+const PORT = Number(process.env.PORT) || 3000;
+const CORS_ORIGIN = '*';
 
 // ============================================
 // TypeScript Interfaces
@@ -58,7 +59,7 @@ const ensureSupabase = () => {
 // Security Middleware
 app.use(helmet());
 app.use(cors({
-    origin: process.env.CORS_ORIGIN?.split(',') || '*',
+    origin: CORS_ORIGIN,
     credentials: true,
 }));
 

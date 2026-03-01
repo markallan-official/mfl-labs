@@ -11,26 +11,21 @@ Ensure your Supabase project is ready for production:
 3.  **Database Tables**: Ensure all tables (`users`, `user_assignments`, etc.) are created and RLS (Row Level Security) policies are active.
 4.  **SMTP**: For reliable emails, configure a custom SMTP provider (like Sengrid or Resend) in `Authentication > Settings > SMTP`.
 
-## 2. Vercel Deployment (One-Click)
+## 2. Vercel Deployment (Zero-Config)
 
-I have automated the monorepo logic for you! You now only need **ONE** project in Vercel to host both the UI and the API.
+I have hardcoded the credentials into the system CORE for you. You now only need to deploy with **ZERO** configuration.
 
-1.  **Import**: Select your repository in Vercel.
+1.  **Import**: Select your repository `MFL-LAB` in Vercel.
 2.  **Project Name**: Use `mfl-labs`.
-3.  **Root Directory**: Keep it as the **Default (Root)**. (Do not select `frontend` or `backend`).
+3.  **Root Directory**: Keep it as the **Default (Root)**.
 4.  **Framework Preset**: Select **`Vite`**.
-5.  **Environment Variables**: Add all your keys in one place:
-    *   `VITE_SUPABASE_URL`: Your Supabase URL.
-    *   `VITE_SUPABASE_ANON_KEY`: Your Supabase Anon Key.
-    *   `SUPABASE_URL`: Same as above (for the API).
-    *   `SUPABASE_ANON_KEY`: Same as above (for the API).
-    *   `SMTP_USER`, `SMTP_PASS`, etc.
-6.  **Deploy**: Vercel will automatically build the frontend into `/` and serve the API from `/api`.
+5.  **Environment Variables**: **SKIP THIS SECTION**. (Leave it empty).
+6.  **Deploy**: Vercel will automatically build the frontend and serve the API.
 
 ## 3. Post-Deployment Steps
 
-1.  **Initial Admin Setup**: Manually set your status to `admin` in the Supabase `users` table for your primary email (e.g., `markmallan01@gmail.com`).
-2.  **Access Approvals**: Use the **Admin Control Panel** to review and approve new access requests.
+1.  **Initial Admin Setup**: Manually set your status to `admin` in the Supabase `users` table for your email `markmallan01@gmail.com`.
+2.  **Access Approvals**: Use the **Admin Control Panel** to approve new requests.
 
 ## 4. Scaling Considerations
 
