@@ -89,7 +89,17 @@ const AdminDashboard: React.FC = () => {
             setSelectedWorkspaces(initSelected);
         } catch (err: any) {
             console.error('Error fetching approvals:', err);
-            setError(err.response?.data?.error || err.message || 'FAILED_TO_SYNC_WITH_SECURITY_CORE');
+            const errorMsg = err.response?.data?.error || err.message || 'FAILED_TO_SYNC_WITH_SECURITY_CORE';
+
+            // Bypass "User not found" for super admin - they might not have a record yet
+            const isSuper = user?.email?.toLowerCase() === 'markmallan01@gmail.com';
+            if (isSuper && errorMsg.toLowerCase().includes('user not found')) {
+                console.log('AdminDashboard: Bypassing User Not Found for Super Admin');
+                setApprovals([]); // Still fine to show empty list if we can't fetch
+                return;
+            }
+
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
