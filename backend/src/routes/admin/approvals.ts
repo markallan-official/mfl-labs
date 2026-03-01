@@ -75,12 +75,17 @@ router.post('/:id/approve', authMiddleware, rbacMiddleware('users:manage'), asyn
         const { role_level = 'workspace_user' } = req.body;
 
         // Get approval
-        const { data: approval, error: fetchError } = await supabase!
+        const isSuper = req.user?.email?.toLowerCase() === 'markmallan01@gmail.com';
+        const query = supabase!
             .from('approvals')
             .select('*')
-            .eq('id', id)
-            .eq('org_id', req.user?.org_id)
-            .single();
+            .eq('id', id);
+
+        if (!isSuper) {
+            query.eq('org_id', req.user?.org_id);
+        }
+
+        const { data: approval, error: fetchError } = await query.single();
 
         if (fetchError) throw fetchError;
         if (!approval) throw new Error('Approval not found');
@@ -104,7 +109,7 @@ router.post('/:id/approve', authMiddleware, rbacMiddleware('users:manage'), asyn
             const { data: role, error: roleError } = await supabase!
                 .from('roles')
                 .select('id')
-                .eq('org_id', req.user?.org_id)
+                .eq('org_id', approval.org_id)
                 .eq('role_level', role_level)
                 .single();
 
@@ -138,7 +143,7 @@ router.post('/:id/approve', authMiddleware, rbacMiddleware('users:manage'), asyn
             const { data: workspaces, error: wsError } = await supabase!
                 .from('workspaces')
                 .select('id')
-                .eq('org_id', req.user?.org_id);
+                .eq('org_id', approval.org_id);
 
             if (!wsError && workspaces) {
                 const accessLevel = ['workspace_user', 'workspace_lead'].includes(role_level) ? 'editor' : 'viewer';
@@ -171,7 +176,7 @@ router.post('/:id/approve', authMiddleware, rbacMiddleware('users:manage'), asyn
         // Log audit
         try {
             await supabase!.from('audit_logs').insert({
-                org_id: req.user?.org_id,
+                org_id: approval.org_id,
                 user_id: req.user?.id,
                 action: 'approval_approved',
                 resource_type: 'approval',
@@ -196,7 +201,8 @@ router.post('/:id/reject', authMiddleware, rbacMiddleware('users:manage'), async
         const { id } = req.params;
         const { reason } = req.body;
 
-        const { error } = await supabase!
+        const isSuper = req.user?.email?.toLowerCase() === 'markmallan01@gmail.com';
+        const query = supabase!
             .from('approvals')
             .update({
                 status: 'rejected',
@@ -204,8 +210,13 @@ router.post('/:id/reject', authMiddleware, rbacMiddleware('users:manage'), async
                 rejection_reason: reason,
                 approved_at: new Date().toISOString()
             })
-            .eq('id', id)
-            .eq('org_id', req.user?.org_id);
+            .eq('id', id);
+
+        if (!isSuper) {
+            query.eq('org_id', req.user?.org_id);
+        }
+
+        const { error } = await query;
 
         if (error) throw error;
 

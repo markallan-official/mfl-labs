@@ -26,21 +26,41 @@ router.post('/signup', async (req: Request, res: Response) => {
             return res.status(409).json({ error: 'Email already registered' });
         }
 
-        // Create user in Supabase Auth
-        const { data: authData, error: authError } = await supabase!.auth.signUp({
+        // Attempt to create user in Supabase Auth or sign in if already exists
+        let authData: any;
+        let authError: any;
+
+        const { data: signUpData, error: signUpErr } = await supabase!.auth.signUp({
             email,
             password,
             options: {
-                data: {
-                    full_name,
-                    requested_role,
-                },
+                data: { full_name, requested_role },
                 emailRedirectTo: `${process.env.FRONTEND_URL || 'http://localhost:4002'}/login`
             }
         });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error('User creation failed');
+        if (signUpErr) {
+            // If user already registered, try signing in to "repair" the DB state
+            if (signUpErr.message.toLowerCase().includes('already registered')) {
+                console.log('User already in Auth. Attempting repair via sign-in...');
+                const { data: signInData, error: signInErr } = await supabase!.auth.signInWithPassword({
+                    email,
+                    password
+                });
+
+                if (signInErr) {
+                    return res.status(409).json({ error: 'User already exists and authentication failed. Please check your credentials.' });
+                }
+                authData = signInData;
+                console.log('Repair sign-in successful for user:', authData.user.id);
+            } else {
+                throw signUpErr;
+            }
+        } else {
+            authData = signUpData;
+        }
+
+        if (!authData?.user) throw new Error('User identification failed');
 
         // Get or create organization
         let orgId: string;
