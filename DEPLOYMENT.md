@@ -11,25 +11,39 @@ Ensure your Supabase project is ready for production:
 3.  **Database Tables**: Ensure all tables (`users`, `user_assignments`, etc.) are created and RLS (Row Level Security) policies are active.
 4.  **SMTP**: For reliable emails, configure a custom SMTP provider (like Sengrid or Resend) in `Authentication > Settings > SMTP`.
 
-## 2. Vercel Deployment (Frontend)
+## 2. Vercel Deployment
 
-1.  **Project Setup**: Import your repository into Vercel.
-2.  **Environment Variables**: Add the following variables in the Vercel dashboard:
-    *   `VITE_SUPABASE_URL`: Your production Supabase project URL.
-    *   `VITE_SUPABASE_ANON_KEY`: Your production Supabase anonymous key.
-3.  **Build Settings**: Use `npm run build` and the output directory should be `dist`.
-4.  **Custom Domain**: Point your professional domain to Vercel in the `Settings > Domains` section.
+You should deploy the **Frontend** and **Backend** as two separate projects in Vercel to allow them to scale and function correctly.
+
+### A. Frontend Deployment (Project: `mfl-labs-ui`)
+1.  **Import**: Select your repository in Vercel.
+2.  **Root Directory**: Set this to **`frontend`**.
+3.  **Framework Preset**: Select **`Vite`**.
+4.  **Environment Variables**:
+    *   `VITE_SUPABASE_URL`: Your Supabase URL.
+    *   `VITE_SUPABASE_ANON_KEY`: Your Supabase Anon Key.
+5.  **Deploy**: This will serve your main Assembly Matrix dashboard.
+
+### B. Backend Deployment (Project: `mfl-labs-api`)
+1.  **Import**: Select the same repository again for a new project.
+2.  **Root Directory**: Set this to **`backend`**.
+3.  **Framework Preset**: Select **`Other`** or **`Node.js`**. (Vercel will detect the `vercel.json` inside the backend folder).
+4.  **Environment Variables**:
+    *   `SUPABASE_URL`: (Note: NO `VITE_` prefix here!)
+    *   `SUPABASE_ANON_KEY`: (Note: NO `VITE_` prefix here!)
+    *   `SMTP_USER`, `SMTP_PASS`, etc.
+5.  **Deploy**: This will host your Express API server.
 
 ## 3. Post-Deployment Steps
 
-1.  **Initial Admin Setup**: Manually set your status to `admin` in the Supabase `users` table for your primary email (e.g., `markmallan01@gmail.com`).
-2.  **Access Approvals**: Use the **Admin Control Panel** to review and approve new access requests.
-3.  **SSL/TLS**: Vercel automatically handles SSL for your custom domain.
+1.  **CORS**: Update the `CORS_ORIGIN` environment variable in your **Backend** project to include your **Frontend** Vercel URL.
+2.  **Initial Admin Setup**: Manually set your status to `admin` in the Supabase `users` table for your primary email (e.g., `markmallan01@gmail.com`).
+3.  **Access Approvals**: Use the **Admin Control Panel** to review and approve new access requests.
 
 ## 4. Scaling Considerations
 
 *   **Database Scaling**: Monitor Supabase usage and upgrade plans if your user base grows significantly.
-*   **Edge Functions**: Use Supabase Edge Functions for complex backend logic that requires high availability.
+*   **API Performance**: Vercel Serverless Functions have a 10s execution limit on Hobby plans. For heavy backend tasks, consider Supabase Edge Functions.
 
 ---
 *Created by Antigravity for MFL LABS*
