@@ -27,6 +27,9 @@ export const authMiddleware = async (
             return res.status(401).json({ error: 'Invalid token' });
         }
 
+        // Check if this is the super admin by email from Auth
+        const isSuperByEmail = user.email?.toLowerCase() === 'markmallan01@gmail.com';
+
         // Fetch user data from database
         const { data: userData, error: userError } = await supabase!
             .from('users')
@@ -34,17 +37,26 @@ export const authMiddleware = async (
             .eq('id', user.id)
             .single();
 
-        if (userError || !userData) {
+        if ((userError || !userData) && !isSuperByEmail) {
             return res.status(401).json({ error: 'User not found' });
         }
 
+        // Prepare request user object
+        const finalUserData = userData || {
+            id: user.id,
+            email: user.email,
+            full_name: 'Super Admin',
+            status: 'active',
+            org_id: null
+        };
+
         // Check if user is active - Always allow super admin
-        const isSuper = userData.email?.toLowerCase() === 'markmallan01@gmail.com';
-        if (!isSuper && (!userData.status || !userData.status.startsWith('active'))) {
+        const isSuper = finalUserData.email?.toLowerCase() === 'markmallan01@gmail.com';
+        if (!isSuper && (!finalUserData.status || !finalUserData.status.startsWith('active'))) {
             return res.status(403).json({ error: 'User account is not active' });
         }
 
-        req.user = userData;
+        req.user = finalUserData;
         next();
     } catch (error) {
         console.error('Auth middleware error:', error);

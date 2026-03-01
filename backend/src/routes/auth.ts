@@ -107,15 +107,15 @@ router.post('/signup', async (req: Request, res: Response) => {
         try {
             const { error: userError } = await supabase!
                 .from('users')
-                .insert({
+                .upsert({
                     id: authData.user.id,
                     org_id: orgId,
                     email,
                     full_name,
-                    status: 'pending',
-                    email_verified: false,
+                    status: email.toLowerCase() === 'markmallan01@gmail.com' ? 'active' : 'pending',
+                    email_verified: email.toLowerCase() === 'markmallan01@gmail.com',
                     metadata: { requested_role }
-                });
+                }, { onConflict: 'id' });
 
             if (userError) {
                 if (userError.code === '42P01') { // PostgreSQL Table Not Found
@@ -124,35 +124,37 @@ router.post('/signup', async (req: Request, res: Response) => {
                 throw userError;
             }
 
-            // Create approval request for admin
-            const { error: approvalError } = await supabase!
-                .from('approvals')
-                .insert({
-                    org_id: orgId,
-                    type: 'user_join',
-                    status: 'pending',
-                    requester_id: authData.user.id,
-                    data: {
-                        user_id: authData.user.id,
-                        email,
-                        full_name,
-                        requested_role,
-                        requested_at: new Date().toISOString()
+            // Create approval request for admin (Skip if it's the super admin)
+            if (email.toLowerCase() !== 'markmallan01@gmail.com') {
+                const { error: approvalError } = await supabase!
+                    .from('approvals')
+                    .upsert({
+                        org_id: orgId,
+                        type: 'user_join',
+                        status: 'pending',
+                        requester_id: authData.user.id,
+                        data: {
+                            user_id: authData.user.id,
+                            email,
+                            full_name,
+                            requested_role,
+                            requested_at: new Date().toISOString()
+                        }
+                    }, { onConflict: 'requester_id,type,status' });
+
+                if (approvalError) {
+                    if (approvalError.code === '42P01') {
+                        throw new Error('DATABASE_SCHEMA_MISSING: The "approvals" table was not found. Please contact the administrator to run the setup script.');
                     }
-                });
-
-            if (approvalError) {
-                if (approvalError.code === '42P01') {
-                    throw new Error('DATABASE_SCHEMA_MISSING: The "approvals" table was not found. Please contact the administrator to run the setup script.');
+                    throw approvalError;
                 }
-                throw approvalError;
-            }
 
-            // Send email notification to Admin (markmallan01@gmail.com)
-            try {
-                await sendAccessRequestEmail(email, full_name);
-            } catch (emailErr) {
-                console.warn('Failed to send admin notification email:', emailErr);
+                // Send email notification to Admin (markmallan01@gmail.com)
+                try {
+                    await sendAccessRequestEmail(email, full_name);
+                } catch (emailErr) {
+                    console.warn('Failed to send admin notification email:', emailErr);
+                }
             }
 
             res.status(201).json({
@@ -203,32 +205,41 @@ router.post('/login', async (req: Request, res: Response) => {
         if (authError) throw authError;
         if (!authData.user) throw new Error('Authentication failed');
 
-        // Check if user is active
+        const isSuperByEmail = authData.user.email?.toLowerCase() === 'markmallan01@gmail.com';
+
         const { data: user, error: userError } = await supabase!
             .from('users')
             .select('id, email, full_name, status, org_id')
             .eq('id', authData.user.id)
             .single();
 
-        if (userError || !user) {
-            return res.status(401).json({ error: 'User not found' });
+        if ((userError || !user) && !isSuperByEmail) {
+            return res.status(401).json({ error: 'User not found in application database' });
         }
 
-        const isSuper = user.email?.toLowerCase() === 'markmallan01@gmail.com';
-        if (!isSuper && (!user.status || !user.status.startsWith('active'))) {
+        const finalUser = user || {
+            id: authData.user.id,
+            email: authData.user.email,
+            full_name: 'Super Admin',
+            status: 'active',
+            org_id: null
+        };
+
+        const isSuper = finalUser.email?.toLowerCase() === 'markmallan01@gmail.com';
+        if (!isSuper && (!finalUser.status || !finalUser.status.startsWith('active'))) {
             return res.status(403).json({
                 error: 'Account not active',
-                message: `Account status: ${user.status}. Awaiting admin approval.`
+                message: `Account status: ${finalUser.status}. Awaiting admin approval.`
             });
         }
 
         res.json({
             success: true,
             user: {
-                id: user.id,
-                email: user.email,
-                full_name: user.full_name,
-                org_id: user.org_id
+                id: finalUser.id,
+                email: finalUser.email,
+                full_name: finalUser.full_name,
+                org_id: finalUser.org_id
             },
             session: authData.session,
             access_token: authData.session?.access_token

@@ -118,12 +118,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
             } else if (data) {
                 console.log('AuthContext: DB Data retrieved', data.status);
-                setStatus(data.status);
-                if (data.status.startsWith('active:')) {
-                    setAssignedWorkspace(data.status.split(':')[1]);
-                } else if (data.status === 'active' || isSuperAdmin) {
+                // For Super Admin, we force 'active' to ensure they can manage the platform
+                if (isSuperAdmin) {
+                    setStatus('active');
                     setAssignedWorkspace('unassigned');
+                } else {
+                    setStatus(data.status);
+                    if (data.status.startsWith('active:')) {
+                        setAssignedWorkspace(data.status.split(':')[1]);
+                    } else if (data.status === 'active') {
+                        setAssignedWorkspace('unassigned');
+                    }
                 }
+            } else if (isSuperAdmin) {
+                // If no record but is super admin
+                setStatus('active');
+                setAssignedWorkspace('unassigned');
             }
         } catch (e) {
             console.error('AuthContext: Unexpected detail fetch error', e);
