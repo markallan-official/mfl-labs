@@ -112,5 +112,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         signOut,
     };
 
-    return <AuthContext.Provider value={value}>{!loading && children}</AuthContext.Provider>;
+    if (loading) {
+        return (
+            <div style={{ backgroundColor: '#050507', height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#0066FF' }}>
+                <div
+                    style={{
+                        width: '50px',
+                        height: '55px',
+                        backgroundColor: '#0066FF',
+                        clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
+                        marginBottom: '30px'
+                    }}
+                    className="hex-glow-animation"
+                />
+                <div style={{ letterSpacing: '8px', fontWeight: 900, fontSize: '12px', color: '#FFF', textAlign: 'center' }}>
+                    SYNCHRONIZING NEURAL GATEWAY
+                </div>
+                <div style={{ marginTop: '15px', fontSize: '9px', color: '#0066FF', opacity: 0.8, letterSpacing: '3px', fontWeight: 700 }}>
+                    VERIFYING_CREDENTIALS // STANDBY
+                </div>
+            </div>
+        );
+    }
+
+    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

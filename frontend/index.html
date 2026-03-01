@@ -9,7 +9,41 @@
 </head>
 
 <body>
-    <div id="root"></div>
+    <div id="root">
+        <!-- High-fidelity base loader -->
+        <div
+            style="background-color: #050507; height: 100vh; width: 100vw; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: sans-serif; color: #0066FF;">
+            <div
+                style="width: 40px; height: 45px; background-color: #0066FF; clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%); margin-bottom: 20px; animation: pulse 2s infinite ease-in-out;">
+            </div>
+            <div style="letter-spacing: 5px; font-weight: 900; font-size: 10px; color: #FFF;">INITIALIZING MATRIX</div>
+            <div style="margin-top: 10px; font-size: 8px; color: #0066FF; opacity: 0.6; letter-spacing: 2px;">SECURE
+                BOOT // GATEWAY_ALPHA</div>
+        </div>
+        <style>
+            @keyframes pulse {
+                0% {
+                    opacity: 0.3;
+                    transform: scale(0.95);
+                }
+
+                50% {
+                    opacity: 1;
+                    transform: scale(1.05);
+                }
+
+                100% {
+                    opacity: 0.3;
+                    transform: scale(0.95);
+                }
+            }
+
+            body {
+                margin: 0;
+                background: #050507;
+            }
+        </style>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
 </body>
 
