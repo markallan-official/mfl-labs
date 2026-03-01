@@ -56,6 +56,18 @@ body,
     transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
 }
 
+@media (max-width: 768px) {
+    .hex-container {
+        width: 160px;
+        height: 140px;
+        margin: 2px;
+    }
+
+    .assembly-matrix-grid {
+        padding: 20px 10px;
+    }
+}
+
 .hex-container:hover {
     transform: scale(1.05) translateY(-5px);
     z-index: 10;

@@ -16,6 +16,13 @@ import {
 const Dashboard: React.FC = () => {
     const { user, isAdmin, assignedWorkspace, signOut } = useAuth();
     const navigate = useNavigate();
+    const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
+
+    useEffect(() => {
+        const handleResize = () => setIsMobile(window.innerWidth < 768);
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
     useEffect(() => {
         // Only auto-redirect assigned staff to their specific terminal
@@ -47,9 +54,11 @@ const Dashboard: React.FC = () => {
     }
 
     // Split modules into rows for the honeycomb effect
-    const row1 = visibleModules.slice(0, 3);
-    const row2 = visibleModules.slice(3, 5);
-    const row3 = visibleModules.slice(5);
+    // For mobile, we'll use a different grouping or just stack them
+    const row1 = isMobile ? visibleModules.slice(0, 2) : visibleModules.slice(0, 3);
+    const row2 = isMobile ? visibleModules.slice(2, 4) : visibleModules.slice(3, 5);
+    const row3 = isMobile ? visibleModules.slice(4, 6) : visibleModules.slice(5);
+    const row4 = isMobile ? visibleModules.slice(6) : [];
 
     const Hexagon = ({ item }: { item: any }) => (
         <div
@@ -71,10 +80,10 @@ const Dashboard: React.FC = () => {
 
             <div className="hexagon-shape" style={{
                 position: 'absolute',
-                top: '8px',
-                left: '8px',
-                right: '8px',
-                bottom: '8px',
+                top: isMobile ? '4px' : '8px',
+                left: isMobile ? '4px' : '8px',
+                right: isMobile ? '4px' : '8px',
+                bottom: isMobile ? '4px' : '8px',
                 border: `1px solid ${item.color}33`,
                 zIndex: 2
             }} />
@@ -87,12 +96,12 @@ const Dashboard: React.FC = () => {
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                padding: '20px',
+                padding: isMobile ? '10px' : '20px',
                 textAlign: 'center'
             }}>
                 <div style={{
-                    fontSize: '48px',
-                    marginBottom: '15px',
+                    fontSize: isMobile ? '32px' : '48px',
+                    marginBottom: isMobile ? '8px' : '15px',
                     color: item.color,
                     display: 'flex',
                     alignItems: 'center',
@@ -101,10 +110,10 @@ const Dashboard: React.FC = () => {
                 }}>
                     {item.icon}
                 </div>
-                <h3 style={{ margin: 0, fontSize: '13px', letterSpacing: '3px', fontWeight: 900, color: '#FFF' }}>
+                <h3 style={{ margin: 0, fontSize: isMobile ? '10px' : '13px', letterSpacing: isMobile ? '1px' : '3px', fontWeight: 900, color: '#FFF' }}>
                     {item.title}
                 </h3>
-                <div style={{ fontSize: '9px', marginTop: '8px', color: item.color, opacity: 0.8, fontWeight: 700, letterSpacing: '1px' }}>
+                <div style={{ fontSize: isMobile ? '7px' : '9px', marginTop: '8px', color: item.color, opacity: 0.8, fontWeight: 700, letterSpacing: '1px' }}>
                     {item.desc.toUpperCase()}
                 </div>
             </div>
@@ -112,7 +121,7 @@ const Dashboard: React.FC = () => {
     );
 
     return (
-        <div style={{ minHeight: '100vh', position: 'relative', overflow: 'hidden', backgroundColor: 'var(--bg-deep)' }}>
+        <div style={{ minHeight: '100vh', position: 'relative', overflowX: 'hidden', overflowY: 'auto', backgroundColor: 'var(--bg-deep)' }}>
             <div style={{
                 position: 'absolute',
                 inset: 0,
@@ -125,25 +134,40 @@ const Dashboard: React.FC = () => {
             <div style={{ position: 'absolute', top: '-15%', left: '-15%', width: '50%', height: '50%', backgroundColor: 'var(--primary-blue)', filter: 'blur(180px)', opacity: 0.08 }} className="animate-pulse-slow" />
             <div style={{ position: 'absolute', bottom: '-15%', right: '-15%', width: '50%', height: '50%', backgroundColor: 'var(--primary-red)', filter: 'blur(180px)', opacity: 0.08 }} className="animate-pulse-slow" />
 
-            <nav style={{ padding: '30px 60px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', position: 'relative', zIndex: 10 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-                    <div className="hexagon-shape hex-glow-animation" style={{ width: '45px', height: '50px', backgroundColor: 'var(--primary-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                        <span style={{ fontWeight: 900, color: 'white', fontSize: '20px', letterSpacing: '-1px' }}>M</span>
+            <nav style={{
+                padding: isMobile ? '20px' : '30px 60px',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '20px' : '0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: isMobile ? 'flex-start' : 'center',
+                position: 'relative',
+                zIndex: 10
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '16px' : '24px' }}>
+                    <div className="hexagon-shape hex-glow-animation" style={{ width: isMobile ? '35px' : '45px', height: isMobile ? '40px' : '50px', backgroundColor: 'var(--primary-blue)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <span style={{ fontWeight: 900, color: 'white', fontSize: isMobile ? '16px' : '20px', letterSpacing: '-1px' }}>M</span>
                     </div>
                     <div>
-                        <h1 style={{ margin: 0, fontSize: '22px', letterSpacing: '5px', fontWeight: 900, color: '#FFF' }}>
+                        <h1 style={{ margin: 0, fontSize: isMobile ? '18px' : '22px', letterSpacing: isMobile ? '3px' : '5px', fontWeight: 900, color: '#FFF' }}>
                             ASSEMBLY <span style={{ color: 'var(--primary-red)' }}>MATRIX</span>
                         </h1>
-                        <div style={{ fontSize: '9px', color: 'var(--primary-blue)', letterSpacing: '3px', fontWeight: 800, marginTop: '2px' }}>
-                            ENCRYPTED NEURAL GATEWAY // ACTIVEV.1.0
+                        <div style={{ fontSize: isMobile ? '7px' : '9px', color: 'var(--primary-blue)', letterSpacing: '2px', fontWeight: 800, marginTop: '2px' }}>
+                            ENCRYPTED NEURAL GATEWAY // ACTIVE V.1.0
                         </div>
                     </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: '40px' }}>
-                    <div style={{ textAlign: 'right' }}>
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    width: isMobile ? '100%' : 'auto',
+                    justifyContent: isMobile ? 'space-between' : 'flex-end',
+                    gap: isMobile ? '0' : '40px'
+                }}>
+                    <div style={{ textAlign: isMobile ? 'left' : 'right' }}>
                         <div style={{ fontSize: '10px', color: 'var(--text-muted)', letterSpacing: '2px', fontWeight: 800 }}>OPS_COMMANDER</div>
-                        <div style={{ fontSize: '15px', fontWeight: 900, color: 'var(--primary-blue)', letterSpacing: '1px' }}>
+                        <div style={{ fontSize: isMobile ? '13px' : '15px', fontWeight: 900, color: 'var(--primary-blue)', letterSpacing: '1px' }}>
                             {user?.email?.split('@')[0].toUpperCase()}
                         </div>
                     </div>
@@ -153,7 +177,7 @@ const Dashboard: React.FC = () => {
                             backgroundColor: 'transparent',
                             color: 'var(--primary-red)',
                             border: '2px solid var(--primary-red)',
-                            padding: '10px 24px',
+                            padding: isMobile ? '8px 16px' : '10px 24px',
                             borderRadius: '4px',
                             cursor: 'pointer',
                             fontSize: '11px',
@@ -165,48 +189,54 @@ const Dashboard: React.FC = () => {
                             transition: 'all 0.3s'
                         }}
                     >
-                        <FiLogOut /> DISCONNECT
+                        <FiLogOut /> {window.innerWidth > 960 ? 'DISCONNECT' : 'EXIT'}
                     </button>
                 </div>
             </nav>
 
-            <main className="assembly-matrix-grid" style={{ position: 'relative', zIndex: 5 }}>
-                <div style={{ textAlign: 'center', marginBottom: '80px', marginTop: '30px' }}>
-                    <h2 style={{ fontSize: '11px', letterSpacing: '10px', color: 'var(--text-muted)', marginBottom: '15px', fontWeight: 900 }}>
+            <main className="assembly-matrix-grid" style={{ position: 'relative', zIndex: 5, paddingBottom: '100px' }}>
+                <div style={{ textAlign: 'center', marginBottom: isMobile ? '40px' : '80px', marginTop: isMobile ? '10px' : '30px' }}>
+                    <h2 style={{ fontSize: isMobile ? '9px' : '11px', letterSpacing: isMobile ? '5px' : '10px', color: 'var(--text-muted)', marginBottom: '15px', fontWeight: 900 }}>
                         SELECT INTERFACE_NODE
                     </h2>
-                    <p style={{ fontSize: '15px', maxWidth: '700px', margin: '0 auto', opacity: 0.6, fontWeight: 400, lineHeight: 1.8, letterSpacing: '0.5px' }}>
+                    <p style={{ fontSize: isMobile ? '13px' : '15px', maxWidth: '700px', margin: '0 auto', opacity: 0.6, fontWeight: 400, lineHeight: 1.6, letterSpacing: '0.5px', padding: '0 20px' }}>
                         Operational environment synchronization confirmed. Authorized credentials detected. Select any active module terminal below to initialize operational protocols.
                     </p>
                 </div>
 
-                <div className="hex-grid">
+                <div className="hex-grid" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                     <div className="hex-row">
                         {row1.map(item => <Hexagon key={item.id} item={item} />)}
                     </div>
-                    <div className="hex-row" style={{ marginTop: '-65px' }}>
+                    <div className="hex-row" style={{ marginTop: isMobile ? '-40px' : '-65px' }}>
                         {row2.map(item => <Hexagon key={item.id} item={item} />)}
                     </div>
-                    <div className="hex-row" style={{ marginTop: '-65px' }}>
+                    <div className="hex-row" style={{ marginTop: isMobile ? '-40px' : '-65px' }}>
                         {row3.map(item => <Hexagon key={item.id} item={item} />)}
                     </div>
+                    {row4.length > 0 && (
+                        <div className="hex-row" style={{ marginTop: isMobile ? '-40px' : '-65px' }}>
+                            {row4.map(item => <Hexagon key={item.id} item={item} />)}
+                        </div>
+                    )}
                 </div>
 
                 {!isAdmin && !assignedWorkspace && (
                     <div style={{
-                        marginTop: '120px',
+                        marginTop: isMobile ? '60px' : '120px',
                         backgroundColor: 'rgba(255, 26, 26, 0.08)',
                         border: '2px solid var(--primary-red)',
-                        padding: '25px 50px',
+                        padding: isMobile ? '15px 30px' : '25px 50px',
                         borderRadius: '4px',
                         textAlign: 'center',
                         maxWidth: '500px',
+                        margin: '0 auto',
                         backdropFilter: 'blur(10px)'
                     }}>
-                        <div style={{ color: 'var(--primary-red)', fontWeight: 900, fontSize: '13px', letterSpacing: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
-                            <FiLock /> ASSIGNMENT PROTOCOL PENDING
+                        <div style={{ color: 'var(--primary-red)', fontWeight: 900, fontSize: isMobile ? '11px' : '13px', letterSpacing: '3px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '15px' }}>
+                            <FiLock /> ASSIGNMENT PENDING
                         </div>
-                        <p style={{ fontSize: '11px', marginTop: '12px', opacity: 0.8, lineHeight: 1.6, letterSpacing: '1px' }}>
+                        <p style={{ fontSize: isMobile ? '10px' : '11px', marginTop: '12px', opacity: 0.8, lineHeight: 1.6, letterSpacing: '1px' }}>
                             System administrator manual authorization required for terminal access. Please wait for node synchronization.
                         </p>
                     </div>
@@ -218,10 +248,13 @@ const Dashboard: React.FC = () => {
                 bottom: 0,
                 left: 0,
                 right: 0,
-                padding: '15px 60px',
+                padding: isMobile ? '10px 20px' : '15px 60px',
                 borderTop: '1px solid var(--glass-border)',
                 display: 'flex',
+                flexDirection: isMobile ? 'column' : 'row',
                 justifyContent: 'space-between',
+                alignItems: 'center',
+                gap: isMobile ? '10px' : '0',
                 fontSize: '9px',
                 color: 'var(--text-muted)',
                 letterSpacing: '2px',
@@ -230,12 +263,12 @@ const Dashboard: React.FC = () => {
                 backdropFilter: 'blur(10px)',
                 zIndex: 20
             }}>
-                <div style={{ display: 'flex', gap: '30px' }}>
-                    <div>MATRIX_STATUS: <span style={{ color: '#00FF00' }}>AUTHORIZED</span></div>
+                <div style={{ display: 'flex', gap: isMobile ? '15px' : '30px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <div>STATUS: <span style={{ color: '#00FF00' }}>AUTHORIZED</span></div>
                     <div>LATENCY: 14MS</div>
-                    <div>ENCRYPTION: QUANTUM_V4</div>
+                    <div>ENCRYPTION: Q_V4</div>
                 </div>
-                <div>© 2026 MFL LABS // ALL OPERATIONS LOGGED</div>
+                <div style={{ textAlign: 'center' }}>© 2026 MFL LABS // OPERATIONS LOGGED</div>
             </div>
         </div>
     );
