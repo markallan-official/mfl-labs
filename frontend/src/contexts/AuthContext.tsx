@@ -112,12 +112,52 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const initAuth = async () => {
             try {
+                // Manually handle PKCE code exchange to ensure session is established before loading
+                const url = new URL(window.location.href);
+                const code = url.searchParams.get('code');
+                
+                if (code) {
+                    console.log('[AUTH] Detected PKCE code in URL, attempting exchange...');
+                    const { data, error } = await supabase.auth.exchangeCodeForSession(window.location.href);
+                    
+                    if (error) {
+                        console.error('[AUTH] PKCE exchange failed:', error.message);
+                    } else if (data.session) {
+                        console.log('[AUTH] PKCE exchange successful, session established');
+                        // Clean URL
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                        // Set session immediately to avoid race with onAuthStateChange
+                        if (mounted) {
+                            setSession(data.session);
+                            setUser(data.session.user);
+                            await fetchUserDetails(data.session.user);
+                            // Auto-approve logic
+                            try {
+                                await fetch('/api/v1/auth/confirm', {
+                                    method: 'POST',
+                                    headers: { Authorization: `Bearer ${data.session.access_token}` }
+                                });
+                                await fetchUserDetails(data.session.user);
+                            } catch (e) {
+                                console.warn('[AUTH] Auto-approve failed:', e);
+                            }
+                        }
+                        return; // Exit, state is set
+                    }
+                }
+
                 const { data: { session: existingSession } } = await supabase.auth.getSession();
                 console.log('[AUTH] Initial session:', existingSession ? '✅ Found' : '❌ None');
+                
                 if (mounted) {
-                    setSession(existingSession);
-                    setUser(existingSession?.user ?? null);
-                    await fetchUserDetails(existingSession?.user);
+                    if (existingSession) {
+                        setSession(existingSession);
+                        setUser(existingSession.user);
+                        await fetchUserDetails(existingSession.user);
+                    } else {
+                        // No session found, stop loading
+                        setLoading(false);
+                    }
                 }
             } catch (err) {
                 console.error('[AUTH] Init error:', err);
