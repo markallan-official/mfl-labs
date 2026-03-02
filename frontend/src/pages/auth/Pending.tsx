@@ -13,16 +13,11 @@ const Pending: React.FC = () => {
         setChecking(false);
     };
 
-    const handleDisconnect = async () => {
-        await signOut();
-        navigate('/signup');
-    };
-
-    // If suddenly active or is admin, redirect
+    // If suddenly approved or admin, redirect
     React.useEffect(() => {
         if (isAdmin) {
             navigate('/admin');
-        } else if (status && status.startsWith('active')) {
+        } else if (status === 'active') {
             navigate('/dashboard');
         }
     }, [isAdmin, status, navigate]);
@@ -42,11 +37,15 @@ const Pending: React.FC = () => {
                 <h1 style={{ color: '#0066FF', fontSize: '28px', marginBottom: '16px', fontWeight: 900, letterSpacing: '1px' }}>
                     PENDING_APPROVAL
                 </h1>
-                <p style={{ color: '#888', lineHeight: 1.6, marginBottom: '30px', fontSize: '14px' }}>
-                    Your account request for <strong style={{ color: '#FFF' }}>MFL LABS</strong> has been received, but it requires administrator approval before you can access the platform.
-                    <br /><br />
-                    You will be notified once an administrator has reviewed your request.
+                <p style={{ color: '#888', lineHeight: 1.6, marginBottom: '10px', fontSize: '14px' }}>
+                    Your account request for <strong style={{ color: '#FFF' }}>MFL LABS</strong> has been received.
+                    An administrator will review your request.
                 </p>
+                {user?.email && (
+                    <p style={{ color: '#0066FF', fontFamily: 'monospace', fontSize: '12px', marginBottom: '30px' }}>
+                        {user.email}
+                    </p>
+                )}
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
                     <button
@@ -63,14 +62,14 @@ const Pending: React.FC = () => {
                     </button>
 
                     <button
-                        onClick={handleDisconnect}
+                        onClick={() => signOut()} // signOut auto-redirects to /signup
                         style={{
-                            padding: '12px 24px', borderRadius: '8px', border: '1px solid #222',
-                            backgroundColor: 'transparent', color: '#555', fontSize: '12px', fontWeight: 800,
+                            padding: '12px 24px', borderRadius: '8px', border: '1px solid #333',
+                            backgroundColor: 'transparent', color: '#666', fontSize: '12px', fontWeight: 800,
                             cursor: 'pointer', transition: 'all 0.2s', letterSpacing: '1px'
                         }}
                     >
-                        DISCONNECT / RETURN_TO_SIGNUP
+                        DISCONNECT / RETURN TO SIGNUP
                     </button>
                 </div>
             </div>

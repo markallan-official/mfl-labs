@@ -14,7 +14,8 @@ import {
 } from 'react-icons/fi';
 
 const Dashboard: React.FC = () => {
-    const { user, isAdmin, assignedWorkspace, signOut } = useAuth();
+    const { user, isAdmin, role, signOut } = useAuth();
+    const assignedWorkspace = role && role !== 'pending' && role !== 'super_admin' ? role : null;
     const navigate = useNavigate();
     const [isMobile, setIsMobile] = React.useState(window.innerWidth < 768);
 
@@ -32,8 +33,7 @@ const Dashboard: React.FC = () => {
     }, [isAdmin, assignedWorkspace, navigate]);
 
     const handleLogout = async () => {
-        await signOut();
-        navigate('/signup');
+        await signOut(); // signOut redirects to /signup automatically
     };
 
     const modules = [

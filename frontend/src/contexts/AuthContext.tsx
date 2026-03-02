@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '../config/supabase';
 
@@ -7,8 +7,8 @@ interface AuthContextType {
     user: User | null;
     loading: boolean;
     isAdmin: boolean;
-    assignedWorkspace: string | null;
     status: string | null;
+    role: string | null;
     signOut: () => Promise<void>;
     refreshAccount: () => Promise<void>;
 }
@@ -18,47 +18,107 @@ const AuthContext = createContext<AuthContextType>({
     user: null,
     loading: true,
     isAdmin: false,
-    assignedWorkspace: null,
     status: null,
+    role: null,
     signOut: async () => { },
     refreshAccount: async () => { },
 });
 
 export const useAuth = () => useContext(AuthContext);
 
+// Helper to fully reset state
+const INITIAL_STATE = {
+    session: null as Session | null,
+    user: null as User | null,
+    isAdmin: false,
+    status: null as string | null,
+    role: null as string | null,
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const [session, setSession] = useState<Session | null>(null);
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
     const [isAdmin, setIsAdmin] = useState(false);
-    const [assignedWorkspace, setAssignedWorkspace] = useState<string | null>(null);
     const [status, setStatus] = useState<string | null>(null);
+    const [role, setRole] = useState<string | null>(null);
+
+    const resetState = useCallback(() => {
+        console.log('[AUTH] Resetting auth state');
+        setSession(null);
+        setUser(null);
+        setIsAdmin(false);
+        setStatus(null);
+        setRole(null);
+    }, []);
+
+    const fetchUserDetails = useCallback(async (currentUser: User | undefined | null) => {
+        if (!currentUser) {
+            resetState();
+            setLoading(false);
+            return;
+        }
+
+        console.log('[AUTH] Fetching profile for:', currentUser.email);
+        const isSuperAdmin = currentUser.email?.toLowerCase() === 'markmallan01@gmail.com';
+        setIsAdmin(isSuperAdmin);
+
+        try {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('role, approved')
+                .eq('id', currentUser.id)
+                .single();
+
+            if (error || !profile) {
+                console.warn('[AUTH] Profile fetch failed:', error?.message);
+                if (isSuperAdmin) {
+                    setStatus('active');
+                    setRole('super_admin');
+                } else {
+                    setStatus('pending');
+                    setRole('pending');
+                }
+            } else {
+                console.log('[AUTH] Profile loaded — approved:', profile.approved, 'role:', profile.role);
+                setStatus(profile.approved ? 'active' : 'pending');
+                setRole(profile.role);
+                // If email is super admin, always force admin status regardless of profile
+                if (isSuperAdmin) setIsAdmin(true);
+            }
+        } catch (e) {
+            console.error('[AUTH] Unexpected profile fetch error:', e);
+            if (isSuperAdmin) {
+                setStatus('active');
+                setRole('super_admin');
+            }
+        } finally {
+            setLoading(false);
+        }
+    }, [resetState]);
 
     useEffect(() => {
         let mounted = true;
 
-        // Force-clear loading after a long delay (7s) as a safety latch
+        // Safety timeout — never stay loading more than 8 seconds
         const safetyLatch = setTimeout(() => {
-            if (mounted && loading) {
-                console.warn('AuthContext: Safety latch triggered. Forcing loading to false.');
+            if (mounted) {
+                console.warn('[AUTH] Safety latch triggered — forcing loading=false');
                 setLoading(false);
             }
-        }, 7000);
+        }, 8000);
 
-        console.log('AuthContext: Initializing...');
-
-        // Unified session checker
         const initAuth = async () => {
             try {
-                const { data: { session } } = await supabase.auth.getSession();
-                console.log('AuthContext: Initial session check completed', !!session);
+                const { data: { session: existingSession } } = await supabase.auth.getSession();
+                console.log('[AUTH] Initial session:', existingSession ? '✅ Found' : '❌ None');
                 if (mounted) {
-                    setSession(session);
-                    setUser(session?.user ?? null);
-                    await fetchUserDetails(session?.user);
+                    setSession(existingSession);
+                    setUser(existingSession?.user ?? null);
+                    await fetchUserDetails(existingSession?.user);
                 }
             } catch (err) {
-                console.error('AuthContext: Init failed', err);
+                console.error('[AUTH] Init error:', err);
                 if (mounted) setLoading(false);
             }
         };
@@ -66,15 +126,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         initAuth();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-            console.log('AuthContext: State change detected:', event);
-            if (mounted) {
+            console.log('[AUTH] State change:', event);
+            if (!mounted) return;
+
+            if (event === 'SIGNED_OUT') {
+                resetState();
+                setLoading(false);
+            } else if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
                 setSession(newSession);
                 setUser(newSession?.user ?? null);
-                if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
-                    await fetchUserDetails(newSession?.user);
-                } else {
-                    setLoading(false);
-                }
+                await fetchUserDetails(newSession?.user);
+            } else {
+                setLoading(false);
             }
         });
 
@@ -83,81 +146,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             clearTimeout(safetyLatch);
             subscription.unsubscribe();
         };
-    }, []);
+    }, [fetchUserDetails, resetState]);
 
-    const fetchUserDetails = async (user: User | undefined | null) => {
-        if (!user) {
-            console.log('AuthContext: No user to fetch details for');
-            if (isAdmin || assignedWorkspace || status) {
-                setIsAdmin(false);
-                setAssignedWorkspace(null);
-                setStatus(null);
-            }
-            setLoading(false);
-            return;
-        }
-
-        console.log('AuthContext: Fetching DB details for', user.email);
-
-        // Check if this is the super admin by email
-        const isSuperAdmin = user.email?.toLowerCase() === 'markmallan01@gmail.com';
-        setIsAdmin(isSuperAdmin);
-
+    // Proper signOut: clear Supabase session, reset state, redirect
+    const signOut = useCallback(async () => {
+        console.log('[AUTH] Signing out...');
         try {
-            const { data: profile, error } = await supabase
-                .from('profiles')
-                .select('role, approved')
-                .eq('id', user.id)
-                .single();
-
-            if (error || !profile) {
-                console.warn('AuthContext: Profile fetch error', error);
-                if (isSuperAdmin) {
-                    setStatus('active');
-                } else {
-                    setStatus('pending');
-                }
-            } else {
-                console.log('AuthContext: Profile retrieved', profile);
-                setStatus(profile.approved ? 'active' : 'pending');
-            }
+            await supabase.auth.signOut();
         } catch (e) {
-            console.error('AuthContext: Unexpected profile fetch error', e);
-            if (isSuperAdmin) setStatus('active');
-        } finally {
-            setLoading(false);
+            console.warn('[AUTH] signOut error (ignoring):', e);
         }
-    };
-
-    const signOut = async () => {
-        await supabase.auth.signOut();
-    };
-
-    const handleHardReset = async () => {
-        localStorage.clear();
-        await supabase.auth.signOut();
-        window.location.reload();
-    };
+        // Clear any lingering localStorage keys
+        Object.keys(localStorage).forEach(key => {
+            if (key.startsWith('mfl-labs-auth') || key.startsWith('sb-')) {
+                localStorage.removeItem(key);
+            }
+        });
+        // Hard redirect — guarantees clean state regardless of React router state
+        window.location.href = '/signup';
+    }, []);
 
     const value = {
         session,
         user,
         loading,
         isAdmin,
-        assignedWorkspace,
         status,
+        role,
         signOut,
-        refreshAccount: async () => await fetchUserDetails(user),
+        refreshAccount: async () => {
+            setLoading(true);
+            await fetchUserDetails(user);
+        },
     };
 
     if (loading) {
         return (
-            <div style={{ backgroundColor: '#050507', height: '100vh', width: '100vw', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#0066FF', textAlign: 'center', padding: '20px' }}>
+            <div style={{
+                backgroundColor: '#050507', height: '100vh', width: '100vw',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'center', color: '#0066FF', textAlign: 'center', padding: '20px'
+            }}>
                 <div
                     style={{
-                        width: '50px',
-                        height: '55px',
-                        backgroundColor: '#0066FF',
+                        width: '50px', height: '55px', backgroundColor: '#0066FF',
                         clipPath: 'polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%)',
                         marginBottom: '30px'
                     }}
@@ -169,18 +201,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 <div style={{ marginTop: '15px', fontSize: '9px', color: '#0066FF', opacity: 0.8, letterSpacing: '3px', fontWeight: 700 }}>
                     VERIFYING_CREDENTIALS // STANDBY
                 </div>
-
                 <button
-                    onClick={handleHardReset}
+                    onClick={() => {
+                        localStorage.clear();
+                        window.location.href = '/signup';
+                    }}
                     style={{
-                        marginTop: '40px',
-                        backgroundColor: 'transparent',
-                        color: 'rgba(255,255,255,0.4)',
-                        border: '1px solid rgba(255,255,255,0.1)',
-                        padding: '8px 16px',
-                        fontSize: '9px',
-                        cursor: 'pointer',
-                        letterSpacing: '2px'
+                        marginTop: '40px', backgroundColor: 'transparent',
+                        color: 'rgba(255,255,255,0.4)', border: '1px solid rgba(255,255,255,0.1)',
+                        padding: '8px 20px', fontSize: '9px', cursor: 'pointer', letterSpacing: '2px'
                     }}
                 >
                     FORCE SESSION RESET
