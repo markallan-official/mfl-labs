@@ -22,8 +22,16 @@ router.post('/signup', async (req: Request, res: Response) => {
             .eq('email', email)
             .single();
 
-        if (existingProfile && existingProfile.approved) {
-            return res.status(409).json({ error: 'Email already registered and approved' });
+        if (existingProfile) {
+            if (existingProfile.approved) {
+                return res.status(409).json({ error: 'Email already registered and approved. Please log in.' });
+            } else {
+                // Return 200 to acknowledge the re-request gracefully
+                return res.status(200).json({
+                    success: true,
+                    message: 'Your request is already being reviewed. Please wait for administrator approval.'
+                });
+            }
         }
 
         // Create user in Supabase Auth

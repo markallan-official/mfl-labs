@@ -83,10 +83,10 @@ export const Signup: React.FC = () => {
                 return;
             }
 
-            setSuccess('Sign up successful! Please check your email for verification.');
+            setSuccess(data.message || 'Sign up successful! Please check your email for verification.');
             setTimeout(() => {
                 navigate('/login');
-            }, 2000);
+            }, 3000);
         } catch (err) {
             setError('An error occurred. Please try again.');
             console.error('Signup error:', err);
