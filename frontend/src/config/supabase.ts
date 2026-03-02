@@ -8,13 +8,6 @@ console.log('[SUPABASE CLIENT] URL:', supabaseUrl ? '✅ Set' : '❌ Missing');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-        // Disable Navigator LockManager to prevent timeouts
-        lock: {
-            acquire: async (name, callback) => {
-                // Execute immediately without locking
-                return await callback();
-            }
-        },
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
