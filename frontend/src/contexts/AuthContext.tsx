@@ -112,6 +112,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         const initAuth = async () => {
             try {
+                // Ensure code exchange for email magic links before reading session
+                const url = new URL(window.location.href);
+                if (url.searchParams.get('code')) {
+                    try {
+                        await supabase.auth.exchangeCodeForSession(window.location.href);
+                        // Clean up URL params to avoid re-exchange
+                        window.history.replaceState({}, document.title, window.location.pathname);
+                    } catch (ex) {
+                        console.warn('[AUTH] exchangeCodeForSession failed:', ex);
+                    }
+                }
                 const { data: { session: existingSession } } = await supabase.auth.getSession();
                 console.log('[AUTH] Initial session:', existingSession ? '✅ Found' : '❌ None');
                 if (mounted) {

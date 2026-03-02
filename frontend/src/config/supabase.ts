@@ -8,11 +8,11 @@ console.log('[SUPABASE CLIENT] URL:', supabaseUrl ? '✅ Set' : '❌ Missing');
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     auth: {
-        // Persist session in localStorage for page refresh resilience
-        persistSession: true,
+        // Avoid Navigator LockManager by not persisting session to localStorage
+        persistSession: false,
         autoRefreshToken: true,
         detectSessionInUrl: true,
-        storageKey: 'mfl-labs-auth'
+        flowType: 'pkce'
     }
 });
 
