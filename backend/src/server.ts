@@ -265,9 +265,11 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 // Start Server
 // ============================================
 
-const server = app.listen(PORT, () => {
-    const portStr = String(PORT);
-    console.log(`
+// Only listen if not in a serverless environment (like Vercel)
+if (process.env.NODE_ENV !== 'production' || !process.env.VERCEL) {
+    app.listen(PORT, () => {
+        const portStr = String(PORT);
+        console.log(`
 ╔════════════════════════════════════════════════════════════════╗
 ║         SaaS Collaborative Platform - Backend API             ║
 ╠════════════════════════════════════════════════════════════════╣
@@ -277,8 +279,7 @@ const server = app.listen(PORT, () => {
 ║ Health Check: http://localhost:${PORT}/health${' '.repeat(21 - portStr.length)}║
 ╚════════════════════════════════════════════════════════════════╝
   `);
-});
-
-export { server };
+    });
+}
 
 export default app;
