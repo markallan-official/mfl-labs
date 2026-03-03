@@ -24,7 +24,7 @@ dotenv.config();
 // Initialize Express application
 const app: Express = express();
 const PORT = Number(process.env.PORT) || Number(process.env.API_PORT) || 3000;
-const CORS_ORIGIN = '*';
+const CORS_ORIGIN = process.env.FRONTEND_URL || '*';
 
 // ============================================
 // TypeScript Interfaces
