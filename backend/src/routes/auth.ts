@@ -39,7 +39,7 @@ router.post('/signup', async (req: Request, res: Response) => {
             password,
             options: {
                 data: { full_name, requested_role: requested_role || 'user' },
-                emailRedirectTo: `${process.env.FRONTEND_URL || 'https://mfl-labs.netlify.app'}/login`
+                emailRedirectTo: `${process.env.FRONTEND_URL || 'https://mfl-labs.vercel.app'}/login`
             }
         });
 

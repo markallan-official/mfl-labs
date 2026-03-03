@@ -1,103 +1,64 @@
-# Vercel Deployment Setup Guide
+# Vercel Deployment Setup Guide (MFL LABS)
 
 ## Prerequisites
 
 - GitHub account with `markallan-official` username
 - Vercel account (linked to your GitHub)
-- Supabase project created
+- Supabase project created (Ref: `yvaidjzhhejrfgpovzmm`)
 
 ## Step 1: Link GitHub Repository to Vercel
 
-1. Go to https://vercel.com
+1. Go to [vercel.com](https://vercel.com)
 2. Click "New Project"
-3. Select your GitHub repository: `markallan-official/AI-dev-saas-platform`
+3. Select your GitHub repository: `markallan-official/mfl-labs`
 4. Click "Import"
 
 ## Step 2: Configure Environment Variables in Vercel
 
-In Vercel project settings, add these environment variables:
+In Vercel project settings (Settings > Environment Variables), add these **EXACT** variables:
 
-```
-VITE_SUPABASE_URL=https://yvaidjzhhejrfgpovzmm.supabase.co
-VITE_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2YWlkanpoaGVqcmZncG92em1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDMxOTcsImV4cCI6MjA4NzYxOTE5N30.uyREMgiTD5o5it4SB5xFoBalKItB_5z-ehOFafQl_vo
-VITE_API_URL=https://your-backend-domain.com
-SUPABASE_URL=https://yvaidjzhhejrfgpovzmm.supabase.co
-SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2YWlkanpoaGVqcmZncG92em1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDMxOTcsImV4cCI6MjA4NzYxOTE5N30.uyREMgiTD5o5it4SB5xFoBalKItB_5z-ehOFafQl_vo
-```
+### **Required for Frontend (Vite)**
+| Key | Value |
+|-----|-------|
+| `VITE_SUPABASE_URL` | `https://yvaidjzhhejrfgpovzmm.supabase.co` |
+| `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2YWlkanpoaGVqcmZncG92em1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDMxOTcsImV4cCI6MjA4NzYxOTE5N30.uyREMgiTD5o5it4SB5xFoBalKItB_5z-ehOFafQl_vo` |
+| `FRONTEND_URL` | `https://mfl-labs.vercel.app` (or your custom domain) |
 
-## Step 3: Deploy Backend
+### **Required for Backend (Node.js)**
+| Key | Value |
+|-----|-------|
+| `SUPABASE_URL` | `https://yvaidjzhhejrfgpovzmm.supabase.co` |
+| `SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2YWlkanpoaGVqcmZncG92em1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDMxOTcsImV4cCI6MjA4NzYxOTE5N30.uyREMgiTD5o5it4SB5xFoBalKItB_5z-ehOFafQl_vo` |
+| `SMTP_USER` | (Your Gmail/SMTP Email) |
+| `SMTP_PASS` | (Your App Password) |
+| `SMTP_HOST` | `smtp.gmail.com` |
+| `SMTP_PORT` | `587` |
 
-Backend can be deployed separately to:
-- Railway
-- Render
-- AWS Lambda
-- Google Cloud Run
-- Heroku
+## Step 3: Configure Build Settings in Vercel
 
-For this guide, we'll use Vercel Functions.
+Vercel should automatically detect the settings from `vercel.json`, but verify these:
+- **Framework Preset:** `Vite`
+- **Root Directory:** `./` (Project root)
+- **Build Command:** `npm run build --workspace=@saas/frontend`
+- **Output Directory:** `frontend/dist`
+- **Install Command:** `npm install`
 
-## Step 4: Configure Build & Deployment
+## Step 4: Verification
 
-Vercel will automatically use `vercel.json` configuration which specifies:
-- Build command: `npm run build`
-- Output directory: `frontend/dist`
-- Framework: Vite
-
-## Step 5: Custom Domains (Optional)
-
-1. Go to Vercel Project Settings → Domains
-2. Add your custom domain
-3. Update DNS records as instructed
-
-## Step 6: GitHub Secrets for CI/CD
-
-Add these secrets to your GitHub repository:
-- `VERCEL_TOKEN` - Get from Vercel Account Settings
-- `VERCEL_ORG_ID` - Your Vercel org ID
-- `VERCEL_PROJECT_ID` - Your Vercel project ID
-- `SUPABASE_URL` - Your Supabase project URL
-- `SUPABASE_ANON_KEY` - Your Supabase anon key
-
-## Local Development
-
-### Frontend (Port 5173)
-```bash
-cd frontend
-npm install
-npm run dev
-```
-Accessible at: http://localhost:5173
-
-### Backend (Port 3000)
-```bash
-cd backend
-npm install
-npm run dev
-```
-Accessible at: http://localhost:3000
-
-## API Integration
-
-Frontend calls backend API at: `http://localhost:3000/api/v1/...`
-
-Vercel automatically proxies `/api/*` requests to your backend through API routes.
-
-## Environment Variables
-
-Each environment needs:
-- **Development**: `.env.local`
-- **Staging**: Set in Vercel/Render staging environment
-- **Production**: Set in Vercel/Render production environment
+1. After deployment, visit `https://mfl-labs.vercel.app`.
+2. Check the console for `[SUPABASE CLIENT] URL: ✅ Set`.
+3. Try to log in. The frontend will communicate with the backend via the `/api` proxy.
 
 ## Troubleshooting
 
-### Build fails with missing dependencies
-```bash
-npm install --legacy-peer-deps
-npm run build
-```
+### "this.lock is not a function"
+This was fixed by removing the custom lock mock in `supabase.ts`. Ensure your local code matches the latest push.
 
-### Port conflicts
+### "Safety latch triggered"
+This was fixed by adding logic to `AuthContext.tsx` to wait for Supabase to process redirect codes (`?code=...`) before rendering the app.
+
+### API Returns 404
+Ensure `vercel.json` has the correct rewrites for `/api/:path*` pointing to `/api/index.ts`.
 - Frontend: Change vite port in `vite.config.ts`
 - Backend: Change API_PORT in `.env`
 
