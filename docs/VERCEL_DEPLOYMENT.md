@@ -13,7 +13,7 @@
 3. Select your GitHub repository: `markallan-official/mfl-labs`
 4. Click "Import"
 
-## Step 2: Configure Environment Variables in Vercel
+## Step 3: Configure Environment Variables in Vercel
 
 In Vercel project settings (Settings > Environment Variables), add these **EXACT** variables:
 
@@ -22,7 +22,7 @@ In Vercel project settings (Settings > Environment Variables), add these **EXACT
 |-----|-------|
 | `VITE_SUPABASE_URL` | `https://yvaidjzhhejrfgpovzmm.supabase.co` |
 | `VITE_SUPABASE_ANON_KEY` | `eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl2YWlkanpoaGVqcmZncG92em1tIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzIwNDMxOTcsImV4cCI6MjA4NzYxOTE5N30.uyREMgiTD5o5it4SB5xFoBalKItB_5z-ehOFafQl_vo` |
-| `FRONTEND_URL` | `https://mfl-labs.vercel.app` (or your custom domain) |
+| `FRONTEND_URL` | `https://mfl-labs.vercel.app` |
 
 ### **Required for Backend (Node.js)**
 | Key | Value |
@@ -34,16 +34,16 @@ In Vercel project settings (Settings > Environment Variables), add these **EXACT
 | `SMTP_HOST` | `smtp.gmail.com` |
 | `SMTP_PORT` | `587` |
 
-## Step 3: Configure Build Settings in Vercel
+## Step 4: Configure Build Settings in Vercel
 
 Vercel should automatically detect the settings from `vercel.json`, but verify these:
-- **Framework Preset:** `Vite`
-- **Root Directory:** `./` (Project root)
+- **Framework Preset:** `Other` (since it's a monorepo) or `Vite`
+- **Root Directory:** `./`
 - **Build Command:** `npm run build --workspace=@saas/frontend`
 - **Output Directory:** `frontend/dist`
 - **Install Command:** `npm install`
 
-## Step 4: Verification
+## Step 5: Verification
 
 1. After deployment, visit `https://mfl-labs.vercel.app`.
 2. Check the console for `[SUPABASE CLIENT] URL: ✅ Set`.
@@ -51,14 +51,11 @@ Vercel should automatically detect the settings from `vercel.json`, but verify t
 
 ## Troubleshooting
 
-### "this.lock is not a function"
-This was fixed by removing the custom lock mock in `supabase.ts`. Ensure your local code matches the latest push.
-
-### "Safety latch triggered"
-This was fixed by adding logic to `AuthContext.tsx` to wait for Supabase to process redirect codes (`?code=...`) before rendering the app.
-
 ### API Returns 404
-Ensure `vercel.json` has the correct rewrites for `/api/:path*` pointing to `/api/index.ts`.
+Ensure `vercel.json` is in the root directory and has the correct rewrites for `/api/:path*` pointing to `/api/index.ts`.
+
+### Deployment Error: "Could not find module"
+Ensure you have run `npm install` in the root and that all dependencies are listed in the root `package.json`.
 - Frontend: Change vite port in `vite.config.ts`
 - Backend: Change API_PORT in `.env`
 
